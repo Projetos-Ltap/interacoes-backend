@@ -246,7 +246,7 @@ jobs:
           IMAGE: ghcr.io/${{ env.IMAGE_NAME }}:latest
         run: |
           ssh -o StrictHostKeyChecking=no \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST_MAIN }}" << REMOTE
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST_DEV }}" << REMOTE
             set -e
 
             echo "==> Login no GHCR..."
