@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: interacoes/dspace-backend
+  IMAGE_NAME: Projetos-Ltap/interacoes/dspace-backend
   DSPACE_INSTALL_DIR: /dspaceinstall
 
 jobs:
