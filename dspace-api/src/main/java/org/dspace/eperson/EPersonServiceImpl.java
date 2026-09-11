@@ -29,13 +29,10 @@ import org.dspace.authorize.AuthorizeException;
 import org.dspace.authorize.factory.AuthorizeServiceFactory;
 import org.dspace.authorize.service.AuthorizeService;
 import org.dspace.authorize.service.ResourcePolicyService;
-import org.dspace.content.DSpaceObjectServiceImpl;
-import org.dspace.content.Item;
-import org.dspace.content.MetadataField;
-import org.dspace.content.MetadataValue;
-import org.dspace.content.QAEventProcessed;
-import org.dspace.content.WorkspaceItem;
+import org.dspace.content.*;
 import org.dspace.content.factory.ContentServiceFactory;
+import org.dspace.content.service.CollectionService;
+import org.dspace.content.service.CommunityService;
 import org.dspace.content.service.ItemService;
 import org.dspace.content.service.WorkspaceItemService;
 import org.dspace.core.Constants;
@@ -110,6 +107,12 @@ public class EPersonServiceImpl extends DSpaceObjectServiceImpl<EPerson> impleme
     protected OrcidTokenService orcidTokenService;
     @Autowired
     protected QAEventsDAO qaEventsDao;
+
+    @Autowired
+    protected CollectionService collectionService;
+
+    @Autowired
+    protected CommunityService communityService;
 
     protected EPersonServiceImpl() {
         super();
@@ -716,5 +719,151 @@ public class EPersonServiceImpl extends DSpaceObjectServiceImpl<EPerson> impleme
     @Override
     public String getName(EPerson dso) {
         return dso.getName();
+    }
+
+    @Override
+    public void updateFuncoes(Context context, EPerson ePerson, String funcao) throws SQLException, AuthorizeException {
+
+        // Verifica se é curador ou administrador
+        if (!podeAlterarFuncoes(context)) {
+            throw new AuthorizeException(
+                    "Você precisa ser curador ou administrador para atualizar a função de uma EPerson");
+        }
+
+        // Valida a função
+        if (StringUtils.isBlank(funcao)) {
+            throw new IllegalArgumentException("A função não pode ser vazia");
+        }
+
+        if (!"usuario comum".equals(funcao) && !"catalogador".equals(funcao) && !"curador".equals(funcao) && !"administrador".equals(funcao)) {
+
+            throw new IllegalArgumentException("Função inválida: " + funcao);
+        }
+
+        Set<String> gruposDesejados = new HashSet<>();
+
+        if ("usuario comum".equals(funcao)) {
+
+            // Usuário comum não possui grupos de função.
+
+        } else if ("catalogador".equals(funcao)) {
+
+            List<Collection> collections = collectionService.findAll(context);
+
+            for (Collection collection : collections) {
+                gruposDesejados.add("COLLECTION_" + collection.getID() + "_SUBMIT");
+            }
+
+        } else if ("curador".equals(funcao)) {
+
+            List<Collection> collections = collectionService.findAll(context);
+
+            for (Collection collection : collections) {
+                addCuradorGroups(gruposDesejados, collection);
+            }
+
+        } else if ("administrador".equals(funcao)) {
+
+            List<Community> communities = communityService.findAll(context);
+
+            for (Community community : communities) {
+
+                gruposDesejados.add("COMMUNITY_" + community.getID() + "_ADMIN");
+
+                List<Collection> collections = communityService.getAllCollections(context, community);
+
+                for (Collection collection : collections) {
+                    addCuradorGroups(gruposDesejados, collection);
+                }
+            }
+        }
+
+        // Descobre os grupos atuais da EPerson
+        Set<Group> gruposAtuais = groupService.allMemberGroupsSet(context, ePerson);
+
+        // Remove grupos de função que não são mais necessários
+        for (Group group : gruposAtuais) {
+
+            String groupName = group.getName();
+
+            if (!isGrupoDeFuncao(groupName)) {
+                continue;
+            }
+
+            if (groupService.isDirectMember(group, ePerson) && !gruposDesejados.contains(groupName)) {
+
+                groupService.removeMember(context, group, ePerson);
+            }
+        }
+
+        // Adiciona os grupos desejados
+        for (String groupName : gruposDesejados) {
+
+            Group group = groupService.findByName(context, groupName);
+
+            if (group == null) {
+                continue;
+            }
+
+            if (!groupService.isDirectMember(group, ePerson)) {
+                groupService.addMember(context, group, ePerson);
+            }
+        }
+    }
+
+    private void addCuradorGroups(Set<String> gruposDesejados, Collection collection) {
+
+        String collectionId = collection.getID().toString();
+
+        // Curador também possui permissão de catalogador
+        gruposDesejados.add("COLLECTION_" + collectionId + "_SUBMIT");
+
+        gruposDesejados.add("COLLECTION_" + collectionId + "_WORKFLOW_ROLE_editor");
+
+        gruposDesejados.add("COLLECTION_" + collectionId + "_ADMIN");
+    }
+
+    private boolean isGrupoDeFuncao(String groupName) {
+
+        if (groupName == null) {
+
+            return false;
+        }
+
+        return groupName.matches("^COLLECTION_.+_(SUBMIT|WORKFLOW_ROLE_editor|ADMIN)$") || groupName.matches("^COMMUNITY_.+_ADMIN$");
+    }
+
+    private boolean podeAlterarFuncoes(Context context) throws SQLException {
+
+        if (authorizeService.isAdmin(context)) {
+            return true;
+        }
+
+        EPerson usuarioAtual = context.getCurrentUser();
+
+        if (usuarioAtual == null) {
+            return false;
+        }
+
+        Set<Group> grupos = groupService.allMemberGroupsSet(context, usuarioAtual);
+
+        for (Group group : grupos) {
+            String groupName = group.getName();
+
+            // Administrador da comunidade
+            if (groupName != null
+                    && groupName.matches("^COMMUNITY_.+_ADMIN$")) {
+                return true;
+            }
+
+            // Curador
+            if (groupName != null
+                    && (groupName.matches("^COLLECTION_.+_WORKFLOW_ROLE_editor$")
+                    || groupName.matches("^COLLECTION_.+_ADMIN$"))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

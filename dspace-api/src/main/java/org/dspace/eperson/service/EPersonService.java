@@ -346,4 +346,9 @@ public interface EPersonService extends DSpaceObjectService<EPerson>, DSpaceObje
      *                      access error or other errors.
      */
     EPerson findByProfileItem(Context context, Item profile) throws SQLException;
+
+    void updateFuncoes(Context context, EPerson ePerson,
+                       String funcao)
+            throws SQLException, AuthorizeException;
+
 }

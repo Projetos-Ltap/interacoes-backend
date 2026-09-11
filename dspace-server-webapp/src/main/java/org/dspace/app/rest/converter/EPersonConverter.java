@@ -2,7 +2,7 @@
  * The contents of this file are subject to the license and copyright
  * detailed in the LICENSE and NOTICE files at the root of the source
  * tree and available online at
- *
+ * <p>
  * http://www.dspace.org/license/
  */
 package org.dspace.app.rest.converter;
@@ -13,7 +13,7 @@ import org.dspace.content.MetadataValue;
 import org.dspace.eperson.EPerson;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * This is the converter from/to the EPerson in the DSpace API data model and the
@@ -45,7 +45,7 @@ public class EPersonConverter extends DSpaceObjectConverter<EPerson, org.dspace.
                 .map(group -> group.getName())
                 .toList();
 
-        String funcao = "anonimo";
+        String funcao = "usuario comum";
 
         // Administrador do repositório
         if (groupNames.contains("Administrator")) {
@@ -57,7 +57,7 @@ public class EPersonConverter extends DSpaceObjectConverter<EPerson, org.dspace.
                 .anyMatch(groupName ->
                         groupName.startsWith("COMMUNITY_")
                                 && groupName.endsWith("_ADMIN"))) {
-            funcao = "administrador da comunidade";
+            funcao = "administrador";
         }
 
         // Curador
@@ -93,6 +93,7 @@ public class EPersonConverter extends DSpaceObjectConverter<EPerson, org.dspace.
         eperson.setFuncao(funcao);
     }
 
+    //Funcao para retornar nome completo
     private void setFullName(EPerson obj, EPersonRest eperson) {
 
         String firstName = "";
