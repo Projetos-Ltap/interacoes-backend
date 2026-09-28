@@ -117,7 +117,7 @@
                     <repeatable>true</repeatable>
                     <label>Atores Principais</label>
                     <input-type>onebox</input-type>
-                    <hint>Digite os atores.</hint>
+                    <hint>Digite os atores principais.</hint>
                     <required>Campo obrigatório.</required>
                 </field>
             </row>
