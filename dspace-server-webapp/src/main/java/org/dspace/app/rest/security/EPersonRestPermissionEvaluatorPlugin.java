@@ -79,13 +79,20 @@ public class EPersonRestPermissionEvaluatorPlugin extends RestObjectPermissionEv
                 return false;
             } else if (dsoId.equals(ePerson.getID())) {
                 return true;
-            } else if (authorizeService.isCommunityAdmin(context)
-                && AuthorizeUtil.canCommunityAdminManageAccounts()) {
+            } else if (authorizeService.isAdmin(context)) {
                 return true;
-            } else if (authorizeService.isCollectionAdmin(context)
-                && AuthorizeUtil.canCollectionAdminManageAccounts()) {
+            } else if (authorizeService.isCommunityAdmin(context)) {
+                return true;
+            } else if (authorizeService.isCollectionAdmin(context)) {
                 return true;
             }
+//            } else if (authorizeService.isCommunityAdmin(context)
+//                && AuthorizeUtil.canCommunityAdminManageAccounts()) {
+//                return true;
+//            } else if (authorizeService.isCollectionAdmin(context)
+//                && AuthorizeUtil.canCollectionAdminManageAccounts()) {
+//                return true;
+//            }
         } catch (SQLException e) {
             log.error(e::getMessage, e);
         }
