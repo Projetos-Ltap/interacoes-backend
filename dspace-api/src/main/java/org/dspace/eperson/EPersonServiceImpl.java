@@ -379,9 +379,13 @@ public class EPersonServiceImpl extends DSpaceObjectServiceImpl<EPerson> impleme
     public void delete(Context context, EPerson ePerson, boolean cascade)
             throws SQLException, AuthorizeException, IOException, EPersonDeletionException {
         // authorized?
-        if (!authorizeService.isAdmin(context)) {
+//        if (!authorizeService.isAdmin(context)) {
+//            throw new AuthorizeException(
+//                    "You must be an admin to delete an EPerson");
+//        }
+        if (!podeAlterarFuncoes(context)) {
             throw new AuthorizeException(
-                    "You must be an admin to delete an EPerson");
+                    "Você não tem permissão para excluir esta EPerson");
         }
         // Get all workflow-related groups that the current EPerson belongs to
         Set<Group> workFlowGroups = getAllWorkFlowGroups(context, ePerson);
