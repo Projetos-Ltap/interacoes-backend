@@ -601,7 +601,11 @@ public class EPersonServiceImpl extends DSpaceObjectServiceImpl<EPerson> impleme
         if (!context.ignoreAuthorization()
                 && ((context.getCurrentUser() == null) || (ePerson.getID() != context
                 .getCurrentUser().getID()))) {
-            authorizeService.authorizeAction(context, ePerson, Constants.WRITE);
+//            authorizeService.authorizeAction(context, ePerson, Constants.WRITE);
+            if (!podeAlterarFuncoes(context)) {
+                throw new AuthorizeException(
+                        "Você não tem permissão para editar esta EPerson");
+            }
         }
 
         super.update(context, ePerson);
@@ -866,4 +870,42 @@ public class EPersonServiceImpl extends DSpaceObjectServiceImpl<EPerson> impleme
 
         return false;
     }
+
+//    private boolean podeEditarEPerson(Context context) throws SQLException {
+//
+//        if (authorizeService.isAdmin(context)) {
+//            return true;
+//        }
+//
+//        EPerson usuarioAtual = context.getCurrentUser();
+//
+//        if (usuarioAtual == null) {
+//            return false;
+//        }
+//
+//        Set<Group> grupos = groupService.allMemberGroupsSet(context, usuarioAtual);
+//
+//        for (Group group : grupos) {
+//
+//            String groupName = group.getName();
+//
+//            if (groupName == null) {
+//                continue;
+//            }
+//
+//            // Administrador de comunidade
+//            if (groupName.matches("^COMMUNITY_.+_ADMIN$")) {
+//                return true;
+//            }
+//
+//            // Curador
+//            if (groupName.matches("^COLLECTION_.+_WORKFLOW_ROLE_editor$")
+//                    || groupName.matches("^COLLECTION_.+_ADMIN$")) {
+//                return true;
+//            }
+//        }
+//
+//        return false;
+//    }
+
 }
