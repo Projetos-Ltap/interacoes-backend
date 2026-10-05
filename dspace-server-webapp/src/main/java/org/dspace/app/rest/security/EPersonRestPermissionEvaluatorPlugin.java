@@ -10,6 +10,7 @@ package org.dspace.app.rest.security;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +28,8 @@ import org.dspace.authorize.service.AuthorizeService;
 import org.dspace.core.Constants;
 import org.dspace.core.Context;
 import org.dspace.eperson.EPerson;
+import org.dspace.eperson.Group;
+import org.dspace.eperson.service.GroupService;
 import org.dspace.services.RequestService;
 import org.dspace.services.model.Request;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +50,9 @@ public class EPersonRestPermissionEvaluatorPlugin extends RestObjectPermissionEv
 
     @Autowired
     private RequestService requestService;
+
+    @Autowired
+    private GroupService groupService;
 
     @Override
     public boolean hasDSpacePermission(Authentication authentication, Serializable targetId,
@@ -79,20 +85,15 @@ public class EPersonRestPermissionEvaluatorPlugin extends RestObjectPermissionEv
                 return false;
             } else if (dsoId.equals(ePerson.getID())) {
                 return true;
-            } else if (authorizeService.isAdmin(context)) {
+            } else if (authorizeService.isCommunityAdmin(context)
+                && AuthorizeUtil.canCommunityAdminManageAccounts()) {
                 return true;
-            } else if (authorizeService.isCommunityAdmin(context)) {
+            } else if (authorizeService.isCollectionAdmin(context)
+                && AuthorizeUtil.canCollectionAdminManageAccounts()) {
                 return true;
-            } else if (authorizeService.isCollectionAdmin(context)) {
+            } else if (isCurador(context)) {
                 return true;
             }
-//            } else if (authorizeService.isCommunityAdmin(context)
-//                && AuthorizeUtil.canCommunityAdminManageAccounts()) {
-//                return true;
-//            } else if (authorizeService.isCollectionAdmin(context)
-//                && AuthorizeUtil.canCollectionAdminManageAccounts()) {
-//                return true;
-//            }
         } catch (SQLException e) {
             log.error(e::getMessage, e);
         }
@@ -142,4 +143,29 @@ public class EPersonRestPermissionEvaluatorPlugin extends RestObjectPermissionEv
         return true;
     }
 
+    private boolean isCurador(Context context) throws SQLException {
+
+        EPerson currentUser = context.getCurrentUser();
+
+        if (currentUser == null) {
+            return false;
+        }
+
+        Set<Group> groups = groupService.allMemberGroupsSet(context, currentUser);
+
+        for (Group group : groups) {
+            String groupName = group.getName();
+
+            if (groupName == null) {
+                continue;
+            }
+
+            if (groupName.matches("^COLLECTION_.+_WORKFLOW_ROLE_editor$")
+                    || groupName.matches("^COLLECTION_.+_ADMIN$")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
