@@ -91,10 +91,10 @@ public class EPersonRestPermissionEvaluatorPlugin extends RestObjectPermissionEv
             } else if (authorizeService.isCollectionAdmin(context)
                 && AuthorizeUtil.canCollectionAdminManageAccounts()) {
                 return true;
+            } else if (DSpaceRestPermission.DELETE.equals(restPermission)
+                && isCurador(context)) {
+                return true;
             }
-//            } else if (isCurador(context)) {
-//                return true;
-//            }
         } catch (SQLException e) {
             log.error(e::getMessage, e);
         }
