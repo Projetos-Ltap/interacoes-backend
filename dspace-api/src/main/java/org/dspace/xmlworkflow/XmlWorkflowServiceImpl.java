@@ -336,6 +336,7 @@ public class XmlWorkflowServiceImpl implements XmlWorkflowService {
                         + "item_id=" + wfi.getItem().getID()
                         + "collection_id=" + wfi.getCollection().getID()));
 
+        salvarDataSubmissao(context, wfi.getItem());
         // record the start of the workflow w/provenance message
         recordStart(context, wfi.getItem(), firstActionConfig.getProcessingAction());
 
@@ -1279,5 +1280,35 @@ public class XmlWorkflowServiceImpl implements XmlWorkflowService {
 
         // remove item level policies
         authorizeService.removeAllPoliciesByDSOAndType(context, item, ResourcePolicy.TYPE_WORKFLOW);
+    }
+
+    private void salvarDataSubmissao(Context context, Item item)
+            throws SQLException, AuthorizeException {
+
+        List<MetadataValue> datasExistentes = itemService.getMetadata(
+                item,
+                MetadataSchemaEnum.DC.getName(),
+                "date",
+                "submitted",
+                Item.ANY
+        );
+
+        if (datasExistentes != null && !datasExistentes.isEmpty()) {
+            return;
+        }
+
+        DCDate now = DCDate.getCurrent();
+
+        itemService.addMetadata(
+                context,
+                item,
+                MetadataSchemaEnum.DC.getName(),
+                "date",
+                "submitted",
+                null,
+                now.toString()
+        );
+
+        itemService.update(context, item);
     }
 }
