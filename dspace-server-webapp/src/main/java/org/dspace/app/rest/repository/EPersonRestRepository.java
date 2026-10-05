@@ -35,6 +35,7 @@ import org.dspace.app.rest.model.patch.Operation;
 import org.dspace.app.rest.model.patch.Patch;
 import org.dspace.app.util.AuthorizeUtil;
 import org.dspace.authorize.AuthorizeException;
+import org.dspace.authorize.service.AuthorizeService;
 import org.dspace.authorize.service.ValidatePasswordService;
 import org.dspace.core.Context;
 import org.dspace.eperson.*;
@@ -81,6 +82,9 @@ public class EPersonRestRepository extends DSpaceObjectRestRepository<EPerson, E
 
     @Autowired
     private ObjectMapper mapper;
+
+    @Autowired
+    private AuthorizeService authorizeService;
 
     private final EPersonService es;
 
@@ -244,16 +248,89 @@ public class EPersonRestRepository extends DSpaceObjectRestRepository<EPerson, E
         return converter.toRest(eperson, utils.obtainProjection());
     }
 
+//    @Override
+//    @PreAuthorize("hasAuthority('ADMIN')")
+//    public Page<EPersonRest> findAll(Context context, Pageable pageable) {
+//        try {
+//            long total = es.countTotal(context);
+//            List<EPerson> epersons = es.findAll(context, EPerson.EMAIL, pageable.getPageSize(),
+//                    Math.toIntExact(pageable.getOffset()));
+//            return converter.toRestPage(epersons, pageable, total, utils.obtainProjection());
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e.getMessage(), e);
+//        }
+//    }
     @Override
-    @PreAuthorize("hasAuthority('ADMIN')")
     public Page<EPersonRest> findAll(Context context, Pageable pageable) {
+
+        if (!podeVisualizarEpersons(context)) {
+            throw new AccessDeniedException(
+                    "Você não tem permissão para visualizar as EPersons"
+            );
+        }
+
         try {
             long total = es.countTotal(context);
-            List<EPerson> epersons = es.findAll(context, EPerson.EMAIL, pageable.getPageSize(),
-                    Math.toIntExact(pageable.getOffset()));
-            return converter.toRestPage(epersons, pageable, total, utils.obtainProjection());
+
+            List<EPerson> epersons = es.findAll(
+                    context,
+                    EPerson.EMAIL,
+                    pageable.getPageSize(),
+                    Math.toIntExact(pageable.getOffset())
+            );
+
+            return converter.toRestPage(
+                    epersons,
+                    pageable,
+                    total,
+                    utils.obtainProjection()
+            );
+
         } catch (SQLException e) {
             throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    private boolean podeVisualizarEpersons(Context context) {
+
+        try {
+            // Administrador do repositório
+            if (authorizeService.isAdmin(context)) {
+                return true;
+            }
+
+            EPerson usuarioAtual = context.getCurrentUser();
+
+            if (usuarioAtual == null) {
+                return false;
+            }
+
+            List<Group> grupos = groupService.allMemberGroups(context, usuarioAtual);
+
+            for (Group group : grupos) {
+
+                String groupName = group.getName();
+
+                if (groupName == null) {
+                    continue;
+                }
+
+                // Administrador da comunidade
+                if (groupName.matches("^COMMUNITY_.+_ADMIN$")) {
+                    return true;
+                }
+
+                // Curador
+                if (groupName.matches("^COLLECTION_.+_WORKFLOW_ROLE_editor$")
+                        || groupName.matches("^COLLECTION_.+_ADMIN$")) {
+                    return true;
+                }
+            }
+
+            return false;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -318,6 +395,7 @@ public class EPersonRestRepository extends DSpaceObjectRestRepository<EPerson, E
      */
     @PreAuthorize("hasAuthority('ADMIN') || hasAuthority('MANAGE_ACCESS_GROUP')")
     @SearchRestMethod(name = "isNotMemberOf")
+
     public Page<EPersonRest> findIsNotMemberOf(@Parameter(value = "group", required = true) UUID groupUUID,
                                              @Parameter(value = "query", required = true) String query,
                                              Pageable pageable) {
