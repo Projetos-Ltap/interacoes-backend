@@ -1,24 +1,24 @@
-## Workflow task email message
+## Mensagem de e-mail para notificação de nova tarefa no workflow
 ##
-## {0}  Title of submission
-## {1}  Name of collection
-## {2}  submitter's name
-## {3}  Description of task
-## {4}  link to 'my DSpace' page
+## {0}  Título da submissão
+## {1}  Nome da coleção
+## {2}  Nome do submetente
+## {3}  Descrição da tarefa
+## {4}  Link para a página "Meu DSpace"
 ##
-#set($subject = "${config.get('dspace.name')}: You have a new task")
+#set($subject = "${config.get('dspace.name')}: Você tem uma nova tarefa")
 
-A new item has been submitted:
+Um novo item foi submetido:
 
-Title:        ${params[0]}
-Collection:   ${params[1]}
-Submitted by: ${params[2]}
+Título:          ${params[0]}
+Coleção:         ${params[1]}
+Enviado por:     ${params[2]}
 
 ${params[3]}
 
-To claim this task, please visit your "My${config.get('dspace.shortname')}"
-page:  ${params[4]}
+Para assumir esta tarefa, acesse a página "${config.get('dspace.shortname')}":
+${params[4]}
 
-Many thanks!
+Atenciosamente,
 
-The ${config.get('dspace.name')} Team
+Equipe ${config.get('dspace.name')}
