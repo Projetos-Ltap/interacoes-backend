@@ -14,8 +14,6 @@ Título:          ${params[0]}
 Coleção:         ${params[1]}
 Enviado por:     ${params[2]}
 
-${params[3]}
-
 Para assumir esta tarefa, acesse a página "${config.get('dspace.shortname')}":
 ${params[4]}
 
