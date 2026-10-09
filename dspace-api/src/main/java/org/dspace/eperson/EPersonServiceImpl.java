@@ -324,9 +324,13 @@ public class EPersonServiceImpl extends DSpaceObjectServiceImpl<EPerson> impleme
     @Override
     public EPerson create(Context context) throws SQLException, AuthorizeException {
         // authorized?
-        if (!authorizeService.isAdmin(context)) {
+//        if (!authorizeService.isAdmin(context)) {
+//            throw new AuthorizeException(
+//                    "You must be an admin to create an EPerson");
+//        }
+        if (!podeAlterarFuncoes(context)) {
             throw new AuthorizeException(
-                    "You must be an admin to create an EPerson");
+                    "Você não tem permissão para criar uma EPerson");
         }
 
         // Create a table row
