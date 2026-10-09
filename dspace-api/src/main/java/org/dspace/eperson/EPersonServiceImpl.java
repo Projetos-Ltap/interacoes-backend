@@ -387,6 +387,13 @@ public class EPersonServiceImpl extends DSpaceObjectServiceImpl<EPerson> impleme
 //            throw new AuthorizeException(
 //                    "You must be an admin to delete an EPerson");
 //        }
+        // Impede excluir uma conta pertencente ao grupo global de administradores
+        if (isAdministradorRepositorio(context, ePerson)) {
+            throw new AuthorizeException(
+                    "Não é permitido excluir um administrador do repositório."
+            );
+        }
+
         if (!podeAlterarFuncoes(context)) {
             throw new AuthorizeException(
                     "Você não tem permissão para excluir esta EPerson");
@@ -879,41 +886,14 @@ public class EPersonServiceImpl extends DSpaceObjectServiceImpl<EPerson> impleme
         return false;
     }
 
-//    private boolean podeEditarEPerson(Context context) throws SQLException {
-//
-//        if (authorizeService.isAdmin(context)) {
-//            return true;
-//        }
-//
-//        EPerson usuarioAtual = context.getCurrentUser();
-//
-//        if (usuarioAtual == null) {
-//            return false;
-//        }
-//
-//        Set<Group> grupos = groupService.allMemberGroupsSet(context, usuarioAtual);
-//
-//        for (Group group : grupos) {
-//
-//            String groupName = group.getName();
-//
-//            if (groupName == null) {
-//                continue;
-//            }
-//
-//            // Administrador de comunidade
-//            if (groupName.matches("^COMMUNITY_.+_ADMIN$")) {
-//                return true;
-//            }
-//
-//            // Curador
-//            if (groupName.matches("^COLLECTION_.+_WORKFLOW_ROLE_editor$")
-//                    || groupName.matches("^COLLECTION_.+_ADMIN$")) {
-//                return true;
-//            }
-//        }
-//
-//        return false;
-//    }
+    private boolean isAdministradorRepositorio(
+            Context context, EPerson ePerson) throws SQLException {
+
+        return groupService.allMemberGroupsSet(context, ePerson)
+                .stream()
+                .anyMatch(group ->
+                        "Administrator".equalsIgnoreCase(group.getName())
+                );
+    }
 
 }
