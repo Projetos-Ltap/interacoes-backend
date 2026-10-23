@@ -57,7 +57,7 @@ public class EPersonConverter extends DSpaceObjectConverter<EPerson, org.dspace.
                 .anyMatch(groupName ->
                         groupName.startsWith("COMMUNITY_")
                                 && groupName.endsWith("_ADMIN"))) {
-            funcao = "administrador";
+            funcao = "gerente";
         }
 
         // Curador
