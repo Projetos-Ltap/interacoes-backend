@@ -10,6 +10,7 @@ package org.dspace.app.rest.security;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +28,8 @@ import org.dspace.authorize.service.AuthorizeService;
 import org.dspace.core.Constants;
 import org.dspace.core.Context;
 import org.dspace.eperson.EPerson;
+import org.dspace.eperson.Group;
+import org.dspace.eperson.service.GroupService;
 import org.dspace.services.RequestService;
 import org.dspace.services.model.Request;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +50,9 @@ public class EPersonRestPermissionEvaluatorPlugin extends RestObjectPermissionEv
 
     @Autowired
     private RequestService requestService;
+
+    @Autowired
+    private GroupService groupService;
 
     @Override
     public boolean hasDSpacePermission(Authentication authentication, Serializable targetId,
@@ -84,6 +90,9 @@ public class EPersonRestPermissionEvaluatorPlugin extends RestObjectPermissionEv
                 return true;
             } else if (authorizeService.isCollectionAdmin(context)
                 && AuthorizeUtil.canCollectionAdminManageAccounts()) {
+                return true;
+            } else if (DSpaceRestPermission.DELETE.equals(restPermission)
+                && isCurador(context)) {
                 return true;
             }
         } catch (SQLException e) {
@@ -126,7 +135,8 @@ public class EPersonRestPermissionEvaluatorPlugin extends RestObjectPermissionEv
          */
         for (Operation op: operations) {
             if (!(op.getPath().contentEquals(EPersonPasswordAddOperation.OPERATION_PASSWORD_CHANGE)
-                || (op.getPath().startsWith(DSpaceObjectMetadataPatchUtils.OPERATION_METADATA_PATH)))) {
+                || (op.getPath().startsWith(DSpaceObjectMetadataPatchUtils.OPERATION_METADATA_PATH)
+                || op.getPath().contentEquals("/funcao")))){
                 return false;
             }
         }
@@ -134,4 +144,29 @@ public class EPersonRestPermissionEvaluatorPlugin extends RestObjectPermissionEv
         return true;
     }
 
+    private boolean isCurador(Context context) throws SQLException {
+
+        EPerson currentUser = context.getCurrentUser();
+
+        if (currentUser == null) {
+            return false;
+        }
+
+        Set<Group> groups = groupService.allMemberGroupsSet(context, currentUser);
+
+        for (Group group : groups) {
+            String groupName = group.getName();
+
+            if (groupName == null) {
+                continue;
+            }
+
+            if (groupName.matches("^COLLECTION_.+_WORKFLOW_ROLE_editor$")
+                    || groupName.matches("^COLLECTION_.+_ADMIN$")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

@@ -117,7 +117,7 @@
                     <repeatable>true</repeatable>
                     <label>Atores Principais</label>
                     <input-type>onebox</input-type>
-                    <hint>Digite os atores.</hint>
+                    <hint>Digite os atores principais.</hint>
                     <required>Campo obrigatório.</required>
                 </field>
             </row>
@@ -1963,36 +1963,36 @@
                 <stored-value>Videos</stored-value>
             </pair>
         </value-pairs>
-        <!--        <value-pairs value-pairs-name="instituicao" dc-term="type">-->
-        <!--            <pair>-->
-        <!--                <displayed-value>Instituto Federal do Ceará (IFCE)</displayed-value>-->
-        <!--                <stored-value>Instituto Federal do Ceará (IFCE)</stored-value>-->
-        <!--            </pair>-->
-        <!--            <pair>-->
-        <!--                <displayed-value>Universidade da Integração Internacional da Lusofonia Afro-Brasileira (UNILAB)</displayed-value>-->
-        <!--                <stored-value>Universidade da Integração Internacional da Lusofonia Afro-Brasileira (UNILAB)</stored-value>-->
-        <!--            </pair>-->
-        <!--            <pair>-->
-        <!--                <displayed-value>Universidade Estadual do Ceará (UECE)</displayed-value>-->
-        <!--                <stored-value>Universidade Estadual do Ceará (UECE)</stored-value>-->
-        <!--            </pair>-->
-        <!--            <pair>-->
-        <!--                <displayed-value>Universidade Estadual do Vale do Acaraú (UVA)</displayed-value>-->
-        <!--                <stored-value>Universidade Estadual do Vale do Acaraú (UVA)</stored-value>-->
-        <!--            </pair>-->
-        <!--            <pair>-->
-        <!--                <displayed-value>Universidade Federal do Cariri (UFCA)</displayed-value>-->
-        <!--                <stored-value>Universidade Federal do Cariri (UFCA)</stored-value>-->
-        <!--            </pair>-->
-        <!--            <pair>-->
-        <!--                <displayed-value>Universidade Federal do Ceará (UFC)</displayed-value>-->
-        <!--                <stored-value>Universidade Federal do Ceará (UFC)</stored-value>-->
-        <!--            </pair>-->
-        <!--            <pair>-->
-        <!--                <displayed-value>Universidade Regional do Cariri (URCA)</displayed-value>-->
-        <!--                <stored-value>Universidade Regional do Cariri (URCA)</stored-value>-->
-        <!--            </pair>-->
-        <!--        </value-pairs>-->
+<!--        <value-pairs value-pairs-name="instituicao" dc-term="type">-->
+<!--            <pair>-->
+<!--                <displayed-value>Instituto Federal do Ceará (IFCE)</displayed-value>-->
+<!--                <stored-value>Instituto Federal do Ceará (IFCE)</stored-value>-->
+<!--            </pair>-->
+<!--            <pair>-->
+<!--                <displayed-value>Universidade da Integração Internacional da Lusofonia Afro-Brasileira (UNILAB)</displayed-value>-->
+<!--                <stored-value>Universidade da Integração Internacional da Lusofonia Afro-Brasileira (UNILAB)</stored-value>-->
+<!--            </pair>-->
+<!--            <pair>-->
+<!--                <displayed-value>Universidade Estadual do Ceará (UECE)</displayed-value>-->
+<!--                <stored-value>Universidade Estadual do Ceará (UECE)</stored-value>-->
+<!--            </pair>-->
+<!--            <pair>-->
+<!--                <displayed-value>Universidade Estadual do Vale do Acaraú (UVA)</displayed-value>-->
+<!--                <stored-value>Universidade Estadual do Vale do Acaraú (UVA)</stored-value>-->
+<!--            </pair>-->
+<!--            <pair>-->
+<!--                <displayed-value>Universidade Federal do Cariri (UFCA)</displayed-value>-->
+<!--                <stored-value>Universidade Federal do Cariri (UFCA)</stored-value>-->
+<!--            </pair>-->
+<!--            <pair>-->
+<!--                <displayed-value>Universidade Federal do Ceará (UFC)</displayed-value>-->
+<!--                <stored-value>Universidade Federal do Ceará (UFC)</stored-value>-->
+<!--            </pair>-->
+<!--            <pair>-->
+<!--                <displayed-value>Universidade Regional do Cariri (URCA)</displayed-value>-->
+<!--                <stored-value>Universidade Regional do Cariri (URCA)</stored-value>-->
+<!--            </pair>-->
+<!--        </value-pairs>-->
         <value-pairs value-pairs-name="common_identifiers" dc-term="identifier">
             <pair>
                 <displayed-value>ISSN</displayed-value>

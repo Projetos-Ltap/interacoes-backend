@@ -2,15 +2,18 @@
  * The contents of this file are subject to the license and copyright
  * detailed in the LICENSE and NOTICE files at the root of the source
  * tree and available online at
- *
+ * <p>
  * http://www.dspace.org/license/
  */
 package org.dspace.app.rest.converter;
 
 import org.dspace.app.rest.model.EPersonRest;
 import org.dspace.app.rest.projection.Projection;
+import org.dspace.content.MetadataValue;
 import org.dspace.eperson.EPerson;
 import org.springframework.stereotype.Component;
+
+import java.util.*;
 
 /**
  * This is the converter from/to the EPerson in the DSpace API data model and the
@@ -30,10 +33,87 @@ public class EPersonConverter extends DSpaceObjectConverter<EPerson, org.dspace.
         eperson.setRequireCertificate(obj.getRequireCertificate());
         eperson.setSelfRegistered(obj.getSelfRegistered());
         eperson.setEmail(obj.getEmail());
+        setFullName(obj, eperson);
+        setFuncao(obj, eperson);
 
         return eperson;
     }
 
+    private void setFuncao(EPerson obj, EPersonRest eperson) {
+
+        List<String> groupNames = obj.getGroups().stream()
+                .map(group -> group.getName())
+                .toList();
+
+        String funcao = "usuario comum";
+
+        // Administrador do repositório
+        if (groupNames.contains("Administrator")) {
+            funcao = "administrador do repositorio";
+        }
+
+        // Administrador da comunidade
+        else if (groupNames.stream()
+                .anyMatch(groupName ->
+                        groupName.startsWith("COMMUNITY_")
+                                && groupName.endsWith("_ADMIN"))) {
+            funcao = "administrador";
+        }
+
+        // Curador
+        else {
+            boolean temSubmit = false;
+            boolean temEditor = false;
+            boolean temAdmin = false;
+
+            for (String groupName : groupNames) {
+                if (groupName.matches("COLLECTION_.+_SUBMIT")) {
+                    temSubmit = true;
+                }
+
+                if (groupName.matches("COLLECTION_.+_WORKFLOW_ROLE_editor")) {
+                    temEditor = true;
+                }
+
+                if (groupName.matches("COLLECTION_.+_ADMIN")) {
+                    temAdmin = true;
+                }
+            }
+
+            // Editor ou administrador de coleção = curador
+            if (temEditor || temAdmin) {
+                funcao = "curador";
+            }
+            // Apenas submissor = catalogador
+            else if (temSubmit) {
+                funcao = "catalogador";
+            }
+        }
+
+        eperson.setFuncao(funcao);
+    }
+
+    //Funcao para retornar nome completo
+    private void setFullName(EPerson obj, EPersonRest eperson) {
+
+        String firstName = "";
+        String lastName = "";
+
+        for (MetadataValue metadata : obj.getMetadata()) {
+
+            String field = metadata.getMetadataField().getElement();
+
+            if ("firstname".equals(field)) {
+                firstName = metadata.getValue();
+            }
+
+            if ("lastname".equals(field)) {
+                lastName = metadata.getValue();
+            }
+        }
+
+        eperson.setFullName((firstName + " " + lastName).trim());
+    }
     @Override
     protected EPersonRest newInstance() {
         return new EPersonRest();

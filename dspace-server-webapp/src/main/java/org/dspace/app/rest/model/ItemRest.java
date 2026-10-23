@@ -52,6 +52,11 @@ public class ItemRest extends DSpaceObjectRest {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String entityType = null;
 
+    private boolean hasAttachments = false;
+    private boolean hasImages = false;
+    private boolean hasVideos = false;
+    private boolean hasLinks = false;
+
     @Override
     public String getCategory() {
         return CATEGORY;
@@ -106,5 +111,37 @@ public class ItemRest extends DSpaceObjectRest {
 
     public void setEntityType(String entityType) {
         this.entityType = entityType;
+    }
+
+    public boolean isHasAttachments() {
+        return hasAttachments;
+    }
+
+    public void setHasAttachments(boolean hasAttachments) {
+        this.hasAttachments = hasAttachments;
+    }
+
+    public boolean isHasImages() {
+        return hasImages;
+    }
+
+    public void setHasImages(boolean hasImages) {
+        this.hasImages = hasImages;
+    }
+
+    public boolean isHasVideos() {
+        return hasVideos;
+    }
+
+    public void setHasVideos(boolean hasVideos) {
+        this.hasVideos = hasVideos;
+    }
+
+    public boolean isHasLinks() {
+        return hasLinks;
+    }
+
+    public void setHasLinks(boolean hasLinks) {
+        this.hasLinks = hasLinks;
     }
 }

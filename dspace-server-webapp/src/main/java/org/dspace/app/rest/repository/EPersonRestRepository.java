@@ -9,6 +9,7 @@ package org.dspace.app.rest.repository;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -37,10 +38,7 @@ import org.dspace.authorize.AuthorizeException;
 import org.dspace.authorize.service.AuthorizeService;
 import org.dspace.authorize.service.ValidatePasswordService;
 import org.dspace.core.Context;
-import org.dspace.eperson.EPerson;
-import org.dspace.eperson.EmptyWorkflowGroupException;
-import org.dspace.eperson.Group;
-import org.dspace.eperson.RegistrationData;
+import org.dspace.eperson.*;
 import org.dspace.eperson.service.AccountService;
 import org.dspace.eperson.service.EPersonService;
 import org.dspace.eperson.service.GroupService;
@@ -68,9 +66,6 @@ public class EPersonRestRepository extends DSpaceObjectRestRepository<EPerson, E
     private static final Logger log = LogManager.getLogger();
 
     @Autowired
-    AuthorizeService authorizeService;
-
-    @Autowired
     DiscoverableEndpointsService discoverableEndpointsService;
 
     @Autowired
@@ -87,6 +82,9 @@ public class EPersonRestRepository extends DSpaceObjectRestRepository<EPerson, E
 
     @Autowired
     private ObjectMapper mapper;
+
+    @Autowired
+    private AuthorizeService authorizeService;
 
     private final EPersonService es;
 
@@ -250,16 +248,89 @@ public class EPersonRestRepository extends DSpaceObjectRestRepository<EPerson, E
         return converter.toRest(eperson, utils.obtainProjection());
     }
 
+//    @Override
+//    @PreAuthorize("hasAuthority('ADMIN')")
+//    public Page<EPersonRest> findAll(Context context, Pageable pageable) {
+//        try {
+//            long total = es.countTotal(context);
+//            List<EPerson> epersons = es.findAll(context, EPerson.EMAIL, pageable.getPageSize(),
+//                    Math.toIntExact(pageable.getOffset()));
+//            return converter.toRestPage(epersons, pageable, total, utils.obtainProjection());
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e.getMessage(), e);
+//        }
+//    }
     @Override
-    @PreAuthorize("hasAuthority('ADMIN')")
     public Page<EPersonRest> findAll(Context context, Pageable pageable) {
+
+        if (!podeVisualizarEpersons(context)) {
+            throw new AccessDeniedException(
+                    "Você não tem permissão para visualizar as EPersons"
+            );
+        }
+
         try {
             long total = es.countTotal(context);
-            List<EPerson> epersons = es.findAll(context, EPerson.EMAIL, pageable.getPageSize(),
-                    Math.toIntExact(pageable.getOffset()));
-            return converter.toRestPage(epersons, pageable, total, utils.obtainProjection());
+
+            List<EPerson> epersons = es.findAll(
+                    context,
+                    EPerson.EMAIL,
+                    pageable.getPageSize(),
+                    Math.toIntExact(pageable.getOffset())
+            );
+
+            return converter.toRestPage(
+                    epersons,
+                    pageable,
+                    total,
+                    utils.obtainProjection()
+            );
+
         } catch (SQLException e) {
             throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    private boolean podeVisualizarEpersons(Context context) {
+
+        try {
+            // Administrador do repositório
+            if (authorizeService.isAdmin(context)) {
+                return true;
+            }
+
+            EPerson usuarioAtual = context.getCurrentUser();
+
+            if (usuarioAtual == null) {
+                return false;
+            }
+
+            List<Group> grupos = groupService.allMemberGroups(context, usuarioAtual);
+
+            for (Group group : grupos) {
+
+                String groupName = group.getName();
+
+                if (groupName == null) {
+                    continue;
+                }
+
+                // Administrador da comunidade
+                if (groupName.matches("^COMMUNITY_.+_ADMIN$")) {
+                    return true;
+                }
+
+                // Curador
+                if (groupName.matches("^COLLECTION_.+_WORKFLOW_ROLE_editor$")
+                        || groupName.matches("^COLLECTION_.+_ADMIN$")) {
+                    return true;
+                }
+            }
+
+            return false;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -324,6 +395,7 @@ public class EPersonRestRepository extends DSpaceObjectRestRepository<EPerson, E
      */
     @PreAuthorize("hasAuthority('ADMIN') || hasAuthority('MANAGE_ACCESS_GROUP')")
     @SearchRestMethod(name = "isNotMemberOf")
+
     public Page<EPersonRest> findIsNotMemberOf(@Parameter(value = "group", required = true) UUID groupUUID,
                                              @Parameter(value = "query", required = true) String query,
                                              Pageable pageable) {
@@ -343,26 +415,100 @@ public class EPersonRestRepository extends DSpaceObjectRestRepository<EPerson, E
 
     @Override
     @PreAuthorize("hasPermission(#uuid, 'EPERSON', #patch)")
-    protected void patch(Context context, HttpServletRequest request, String apiCategory, String model, UUID uuid,
-                         Patch patch) throws AuthorizeException, SQLException {
+    protected void patch(Context context, HttpServletRequest request,
+                         String apiCategory, String model, UUID uuid,
+                         Patch patch)
+            throws AuthorizeException, SQLException {
+
         boolean passwordChangeFound = false;
+
+        List<Operation> operacoesNormais = new ArrayList<>();
+        String funcao = null;
+
         for (Operation operation : patch.getOperations()) {
-            if (StringUtils.equalsIgnoreCase(operation.getPath(), "/password")) {
+
+            if (StringUtils.equalsIgnoreCase(
+                    operation.getPath(), "/password")) {
+
                 passwordChangeFound = true;
             }
+
+            if (StringUtils.equalsIgnoreCase(
+                    operation.getPath(), "/funcao")) {
+
+                try {
+                    funcao = mapper.convertValue(
+                            operation.getValue(),
+                            String.class
+                    );
+                } catch (IllegalArgumentException e) {
+                    throw new DSpaceBadRequestException(
+                            "Formato inválido para o campo funcao"
+                    );
+                }
+
+            } else {
+                operacoesNormais.add(operation);
+            }
         }
+
         if (StringUtils.isNotBlank(request.getParameter("token"))) {
+
             if (!passwordChangeFound) {
-                throw new AccessDeniedException("Refused to perform the EPerson patch based on a token without " +
-                                                    "changing the password");
+                throw new AccessDeniedException(
+                        "Não é permitido atualizar a EPerson por token sem alterar a senha"
+                );
             }
+
         } else {
-            if (passwordChangeFound && !StringUtils.equals(context.getAuthenticationMethod(), "password")) {
-                throw new AccessDeniedException("Refused to perform the EPerson patch based to change the password " +
-                                                        "for non \"password\" authentication");
+
+            if (passwordChangeFound &&
+                    !StringUtils.equals(
+                            context.getAuthenticationMethod(),
+                            "password")) {
+
+                throw new AccessDeniedException(
+                        "Recusada a execução do patch da EPerson para alterar a senha, " +
+                                "pois a autenticação não é baseada em \"password\""
+                );
             }
         }
-        patchDSpaceObject(apiCategory, model, uuid, patch);
+
+        // Atualiza os campos normais do EPerson
+        if (!operacoesNormais.isEmpty()) {
+
+            Patch patchNormal = new Patch(operacoesNormais);
+            patchDSpaceObject(
+                    apiCategory,
+                    model,
+                    uuid,
+                    patchNormal
+            );
+        }
+
+        // Atualiza a função do EPerson
+        if (funcao != null) {
+
+            EPerson ePerson = es.find(context, uuid);
+
+            if (ePerson == null) {
+                throw new DSpaceBadRequestException(
+                        "EPerson não encontrado: " + uuid
+                );
+            }
+
+            try {
+                es.updateFuncoes(
+                        context,
+                        ePerson,
+                        funcao
+                );
+            } catch (IllegalArgumentException e) {
+                throw new DSpaceBadRequestException(
+                        e.getMessage()
+                );
+            }
+        }
     }
 
     @Override
