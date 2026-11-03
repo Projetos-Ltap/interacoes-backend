@@ -754,7 +754,7 @@ public class EPersonServiceImpl extends DSpaceObjectServiceImpl<EPerson> impleme
             throw new IllegalArgumentException("A função não pode ser vazia");
         }
 
-        if (!"usuario comum".equals(funcao) && !"catalogador".equals(funcao) && !"curador".equals(funcao) && !"administrador".equals(funcao)) {
+        if (!"usuario comum".equals(funcao) && !"catalogador".equals(funcao) && !"curador".equals(funcao) && !"gerente".equals(funcao)) {
 
             throw new IllegalArgumentException("Função inválida: " + funcao);
         }
@@ -781,7 +781,7 @@ public class EPersonServiceImpl extends DSpaceObjectServiceImpl<EPerson> impleme
                 addCuradorGroups(gruposDesejados, collection);
             }
 
-        } else if ("administrador".equals(funcao)) {
+        } else if ("gerente".equals(funcao)) {
 
             List<Community> communities = communityService.findAll(context);
 
